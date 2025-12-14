@@ -336,6 +336,8 @@ class UnmuteHandler:
                 tts = await quest.get()
                 await tts.send("Hi!")
                 await tts.send(TTSClientEosMessage())
+                # Wait for TTS to finish processing
+                await quest.wait()
             except Exception as e:
                 logger.error(f"TTS Error on first message: {e}")
 
@@ -393,15 +395,19 @@ class UnmuteHandler:
         # Prepare Messages for Mistral
         profile = self.state["patient_profile"]
         
-        # Inject JSON Schema into System Prompt
-        schema_json = PatientResponse.model_json_schema()
+        # Simple JSON instruction without full schema (to avoid "properties" wrapping)
         system_prompt = (
-            f"You are {profile.name}, {profile.age} years old.\\n"
-            f"Condition: {profile.condition}.\\n"
-            f"Instructions: {profile.base_instructions} Keep your responses VERY SHORT (max 10 words if possible, never more than 2 sentences).\\n\\n"
-            f"IMPORTANT: You MUST output a JSON object adhering to the following schema:\\n"
-            f"{json.dumps(schema_json)}\\n\\n"
-            f"The 'speech' field is what you say out loud. 'inner_thoughts' are your private reasoning."
+            f"You are {profile.name}, {profile.age} years old.\n"
+            f"Condition: {profile.condition}.\n"
+            f"Instructions: {profile.base_instructions} Keep your responses VERY SHORT (max 10 words if possible, never more than 2 sentences).\n\n"
+            f"IMPORTANT: You MUST respond with a JSON object with these exact fields:\n"
+            f"- inner_thoughts: Your private reasoning (string)\n"
+            f"- emotional_state: Your current emotion (string)\n"
+            f"- speech: What you say out loud (string, max 2 sentences)\n"
+            f"- compliance_check: Whether you understood the doctor (boolean)\n"
+            f"- conversation_status: 'continue' or 'finished' (string)\n"
+            f"- metadata: Any tracking metrics (object)\n\n"
+            f"Example: {{\"inner_thoughts\": \"...\", \"emotional_state\": \"...\", \"speech\": \"...\", \"compliance_check\": false, \"conversation_status\": \"continue\", \"metadata\": {{}}}}"
         )
         
         messages = [{"role": "system", "content": system_prompt}]
@@ -532,8 +538,16 @@ class UnmuteHandler:
             # Done
             # Done
             try:
-                # Parse JSON
-                structured_response = PatientResponse.model_validate_json(full_json_buffer)
+                # Parse JSON - handle both direct and properties-wrapped formats
+                parsed_json = json.loads(full_json_buffer)
+                
+                # If Mistral wrapped it in {"properties": {...}}, unwrap it
+                if "properties" in parsed_json and isinstance(parsed_json["properties"], dict):
+                    logger.info("Unwrapping 'properties' wrapper from Mistral response")
+                    parsed_json = parsed_json["properties"]
+                
+                # Now validate with Pydantic
+                structured_response = PatientResponse.model_validate(parsed_json)
                 
                 # Log Inner Thoughts
                 logger.info(f"INNER THOUGHTS: {structured_response.inner_thoughts}")

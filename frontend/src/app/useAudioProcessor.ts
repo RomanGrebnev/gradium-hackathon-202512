@@ -53,7 +53,22 @@ export const useAudioProcessor = (
       outputAnalyser.fftSize = 2048;
       outputWorklet.connect(outputAnalyser);
 
-      const decoder = new Worker("/unmute/decoderWorker.min.js");
+      outputWorklet.connect(outputAnalyser);
+
+      // Create a Blob to configure the worker environment before loading the script
+      // This ensures locateFile finds the WASM file at the correct absolute path
+      const workerCode = `
+        self.Module = {
+            locateFile: function(s) {
+                return '/unmute/' + s;
+            }
+        };
+        importScripts('/unmute/decoderWorker.min.js');
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const decoderUrl = URL.createObjectURL(blob);
+      const decoder = new Worker(decoderUrl);
+
       let micDuration = 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

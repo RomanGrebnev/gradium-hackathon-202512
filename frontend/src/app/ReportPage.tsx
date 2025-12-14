@@ -48,7 +48,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ chatHistory, onBack }) => {
                     .map((msg) => `${msg.role === "user" ? "Doctor" : "Patient"}: ${msg.content}`)
                     .join("\n");
 
-                if (!backendServerUrl) throw new Error("Backend URL not found");
+                if (!backendServerUrl) return; // Wait for URL to be ready
 
                 const response = await fetch(`${backendServerUrl}/v1/report`, {
                     method: "POST",
@@ -64,9 +64,11 @@ const ReportPage: React.FC<ReportPageProps> = ({ chatHistory, onBack }) => {
                 }
 
                 const data = await response.json();
+                console.log("Report Data Received:", data); // Debug log
                 setReport(data);
             } catch (err: any) {
-                setError(err.message);
+                console.error("Generate Report Error:", err); // Debug log
+                setError(err.message || "Unknown error occurred");
             } finally {
                 setLoading(false);
             }
