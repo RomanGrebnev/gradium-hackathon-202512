@@ -75,6 +75,33 @@ const ReportPage: React.FC<ReportPageProps> = ({ chatHistory, onBack }) => {
         generateReport();
     }, [chatHistory, backendServerUrl]);
 
+    const onDownloadHtml = async () => {
+        try {
+            if (!backendServerUrl || !report) return;
+            const transcript = report.transcript;
+
+            const response = await fetch(`${backendServerUrl}/v1/report/html`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transcript }),
+            });
+
+            if (!response.ok) throw new Error("Failed to download HTML report");
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `unmute_report_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.html`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen text-white bg-background p-8">
@@ -124,7 +151,15 @@ const ReportPage: React.FC<ReportPageProps> = ({ chatHistory, onBack }) => {
         <div className="min-h-screen bg-background text-offwhite p-4 md:p-8 overflow-y-auto w-full">
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gradium-orange">Detailed Evaluation Report</h1>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gradium-orange mb-2">Detailed Evaluation Report</h1>
+                        <button
+                            onClick={onDownloadHtml}
+                            className="text-sm text-white/50 hover:text-white underline cursor-pointer"
+                        >
+                            Download HTML Report
+                        </button>
+                    </div>
                     <SlantedButton onClick={onBack} kind="secondary">
                         Start New Session
                     </SlantedButton>
