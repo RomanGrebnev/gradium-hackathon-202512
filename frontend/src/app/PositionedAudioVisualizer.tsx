@@ -9,12 +9,14 @@ const PositionedAudioVisualizer = ({
   analyserNode,
   isConnected,
   onCircleClick,
+  className,
 }: {
   chatHistory: ChatMessage[];
   role: "user" | "assistant";
   analyserNode: AnalyserNode | null;
   isConnected: boolean;
   onCircleClick?: () => void;
+  className?: string; // Optional className prop
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isAssistant = role === "assistant";
@@ -51,7 +53,9 @@ const PositionedAudioVisualizer = ({
         "max-w-3xl md:h-full flex items-center -mx-8 -my-8 px-4 md:px-0",
         isAssistant
           ? "md:w-full flex-row md:flex-row-reverse pt-36 md:pt-0"
-          : "w-full flex-row-reverse md:flex-row md:pt-0 md:ml-0"
+          : "w-full flex-row-reverse md:flex-row md:pt-0 md:ml-0",
+        // @ts-ignore
+        className
       )}
     >
       <div
@@ -61,9 +65,8 @@ const PositionedAudioVisualizer = ({
       >
         <canvas
           ref={canvasRef}
-          className={`w-full h-full ${
-            onCircleClick ? "cursor-pointer" : ""
-          }`}
+          className={`w-full h-full ${onCircleClick ? "cursor-pointer" : ""
+            }`}
           onClick={onCircleClick}
         />
       </div>

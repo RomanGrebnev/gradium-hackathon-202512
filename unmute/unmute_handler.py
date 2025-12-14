@@ -1,5 +1,6 @@
 import asyncio
 import math
+import re
 from logging import getLogger
 from pathlib import Path
 import time
@@ -13,6 +14,7 @@ from unmute.utils import (
     audio_to_float32,
     wait_for_item,
 )
+import json
 from pydantic import BaseModel
 
 import unmute.openai_realtime_api_events as ora
@@ -27,14 +29,11 @@ from unmute.gradium_constants import (
     STT_SAMPLES_PER_FRAME,
     TTS_SAMPLES_PER_FRAME,
 )
-from unmute.llm.chatbot import Chatbot
-from unmute.llm.llm_utils import (
-    INTERRUPTION_CHAR,
-    USER_SILENCE_MARKER,
-    VLLMStream,
-    get_openai_client,
-    rechunk_to_words,
-)
+from unmute.llm.llm_utils import rechunk_to_words
+from unmute.agent.graph import build_graph
+from unmute.agent.mistral import MistralClient
+from unmute.schemas import PatientProfile, DialogTurn, SimulationState
+from unmute.schemas_phase3 import PatientResponse
 from unmute.quest_manager import Quest, QuestManager
 from unmute.recorder import Recorder
 from unmute.stt.speech_to_text import SpeechToText, STTMarkerMessage
@@ -55,6 +54,7 @@ AUDIO_INPUT_OVERRIDE: Path | None = None
 DEBUG_PLOT_HISTORY_SEC = 10.0
 
 USER_SILENCE_TIMEOUT = 7.0
+USER_SILENCE_MARKER = " ... "
 FIRST_MESSAGE_TEMPERATURE = 0.7
 FURTHER_MESSAGES_TEMPERATURE = 0.3
 # For this much time, the VAD does not interrupt the bot. This is needed because at
@@ -95,8 +95,31 @@ class UnmuteHandler:
         self.tts_voice: str | None = None  # Stored separately because TTS is restarted
         self.tts_output_stopwatch = Stopwatch()
 
-        self.chatbot = Chatbot()
-        self.openai_client = get_openai_client()
+        self.graph = build_graph()
+        self.mistral = MistralClient()
+        
+        # Initialize State
+        self.state: SimulationState = {
+            "patient_profile": PatientProfile(
+                name="Martha", 
+                age=65, 
+                condition="Type 2 Diabetes", 
+                base_instructions="You are finding it hard to stick to your diet."
+            ),
+            "history": [],
+            "current_input": None,
+            "emotional_state": "Neutral",
+            "current_input": None,
+            "emotional_state": "Neutral",
+            "response_stream": None,
+            "turn_count": 0
+        }
+        
+        # Load Patient Profile from JSON
+        self._load_patient_profile()
+
+        # Migration: Track simple conversation state
+        self._conversation_status = "waiting_for_user"
 
         self.turn_transition_lock = asyncio.Lock()
 
@@ -113,9 +136,48 @@ class UnmuteHandler:
         else:
             self.audio_input_override = None
 
+    def _get_conversation_state(self) -> str:
+        # Simple approximation for now
+        return self._conversation_status
+
     async def cleanup(self):
+        try:
+             await self.save_simulation_report()
+        except Exception as e:
+            logger.error(f"Failed to save simulation report: {e}")
+
         if self.recorder is not None:
             await self.recorder.shutdown()
+
+    async def save_simulation_report(self):
+        """Saves the conversation history and metadata to a JSON report."""
+        if not self.state["history"]:
+            return
+
+        report_dir = Path("logs/reports")
+        report_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        filename = report_dir / f"simulation_{timestamp}.json"
+        
+        report_data = {
+            "patient_profile": self.state["patient_profile"].model_dump(),
+            "emotional_state_final": self.state["emotional_state"],
+            "turn_count": self.state.get("turn_count", 0),
+            "history": [
+                {
+                    "role": t.role,
+                    "content": t.content,
+                    "metadata": t.metadata,
+                    "timestamp": t.timestamp.isoformat()
+                }
+                for t in self.state["history"]
+            ]
+        }
+        
+        with open(filename, "w") as f:
+            json.dump(report_data, f, indent=4)
+        logger.info(f"Saved simulation report to {filename}")
 
     @property
     def stt(self) -> SpeechToText | None:
@@ -134,7 +196,7 @@ class UnmuteHandler:
         return cast(Quest[TextToSpeech], quest).get_nowait()
 
     def get_gradio_update(self):
-        self.debug_dict["conversation_state"] = self.chatbot.conversation_state()
+        self.debug_dict["conversation_state"] = self._get_conversation_state()
         self.debug_dict["connection"]["stt"] = self.stt.state() if self.stt else "none"
         self.debug_dict["connection"]["tts"] = self.tts.state() if self.tts else "none"
         self.debug_dict["tts_voice"] = self.tts.voice if self.tts else "none"
@@ -150,9 +212,9 @@ class UnmuteHandler:
             GradioUpdate(
                 chat_history=[
                     # Not trying to hide the system prompt, just making it less verbose
-                    m
-                    for m in self.chatbot.chat_history
-                    if m["role"] != "system"
+                    {"role": m.role, "content": m.content}
+                    for m in self.state["history"]
+                    if m.role != "system"
                 ],
                 debug_dict=self.debug_dict,
                 debug_plot_data=[],
@@ -162,14 +224,45 @@ class UnmuteHandler:
     async def add_chat_message_delta(
         self,
         delta: str,
-        role: Literal["user", "assistant"],
+        role: Literal["user", "assistant", "system"],
         generating_message_i: int | None = None,  # Avoid race conditions
     ):
-        is_new_message = await self.chatbot.add_chat_message_delta(
-            delta, role, generating_message_i=generating_message_i
-        )
+        # Phase 2: Use Graph to update state with user input
+        self.state["current_input"] = delta
+        # Only running 'listen' and 'analyze' nodes. 'respond' is manual for streaming.
+        # We manually update history for now to mimic 'listen' node if we don't want to await the full graph yet.
+        # But let's try to use the graph if possible. 
+        # Actually, for 'delta' (partial input), we might want to wait until the end.
+        
+        # Current logic: add_chat_message_delta updates history.
+        # Let's map this:
+        if role == "user":
+             # We accumulate user input. In the original code, this sends partials to the UI.
+             # For the Agent, we only act on the COMPLETED user turn.
+             pass
+        
+        # Let's just update the internal state history manually for now to keep it compatible.
+        
+        # Update conversation status
+        if role == "user":
+            self._conversation_status = "user_speaking"
+        elif role == "assistant":
+            self._conversation_status = "bot_speaking"
 
-        return is_new_message
+        # Hack: Emulate Chatbot's history list for the frontend
+        
+        # Hack: Emulate Chatbot's history list for the frontend
+        if not self.state["history"]:
+             self.state["history"].append(DialogTurn(role=role, content=delta))
+             return True
+        
+        last_turn = self.state["history"][-1]
+        if last_turn.role == role:
+            last_turn.content += delta
+            return False
+        else:
+             self.state["history"].append(DialogTurn(role=role, content=delta))
+             return True
 
     async def _generate_response(self):
         # Empty message to signal we've started responding.
@@ -179,81 +272,240 @@ class UnmuteHandler:
         await self.quest_manager.add(quest)
 
     async def _generate_response_task(self):
-        generating_message_i = len(self.chatbot.chat_history)
+        # 0. Check Turn Limit
+        MAX_TURNS = 20
+        self.state.setdefault("turn_count", 0)
+        
+        if self.state["turn_count"] >= MAX_TURNS:
+            logger.info("Max turns reached. Ending conversation.")
+            await self.output_queue.put(CloseStream("Conversation finished (Max Turns)."))
+            return
+
+        self.state["turn_count"] += 1
+        self._conversation_status = "bot_speaking"
+        await self.add_chat_message_delta(" [Fast Loop: Speaking...] ", "system")
+        # We assume the user input is finished and in the state history.
+        
+        # 1. Run Analysis (Listen -> Analyze)
+        # We skip 'listen' because we manually updated history in add_chat_message_delta
+        # So we just run 'analyze' logic manually or via graph if we structured it to accept history.
+        # Let's manually run analyze for now or skip.
+        
+        generating_message_i = len(self.state["history"])
+        
+        # Frontend Chat History update (mapped from state history)
+        frontend_history = [{"role": t.role, "content": t.content} for t in self.state["history"]]
 
         await self.output_queue.put(
             ora.ResponseCreated(
                 response=ora.Response(
                     status="in_progress",
                     voice=self.tts_voice or "missing",
-                    chat_history=self.chatbot.chat_history,
+                    chat_history=frontend_history,
                 )
             )
         )
 
         llm_stopwatch = Stopwatch()
-
         quest = await self.start_up_tts(generating_message_i)
-        llm = VLLMStream(
-            # if generating_message_i is 2, then we have a system prompt + an empty
-            # assistant message signalling that we are generating a response.
-            self.openai_client,
-            temperature=FIRST_MESSAGE_TEMPERATURE
-            if generating_message_i == 2
-            else FURTHER_MESSAGES_TEMPERATURE,
-        )
 
-        messages = self.chatbot.preprocessed_messages()
+        # Prepare Messages for Mistral
+        profile = self.state["patient_profile"]
+        
+        # Inject JSON Schema into System Prompt
+        schema_json = PatientResponse.model_json_schema()
+        system_prompt = (
+            f"You are {profile.name}, {profile.age} years old.\\n"
+            f"Condition: {profile.condition}.\\n"
+            f"Instructions: {profile.base_instructions}\\n\\n"
+            f"IMPORTANT: You MUST output a JSON object adhering to the following schema:\\n"
+            f"{json.dumps(schema_json)}\\n\\n"
+            f"The 'speech' field is what you say out loud. 'inner_thoughts' are your private reasoning."
+        )
+        
+        messages = [{"role": "system", "content": system_prompt}]
+        for turn in self.state["history"]:
+            # Skip empty content
+            if not turn.content or not turn.content.strip():
+                continue
+            # Skip visualization system messages (don't send to LLM)
+            if turn.role == "system" and ("Fast Loop" in turn.content or "Slow Loop" in turn.content):
+                continue
+            messages.append({"role": turn.role, "content": turn.content})
+        
+        # Mistral API requires the last message to be from User.
+        if len(messages) == 1 and messages[0]["role"] == "system":
+             messages.append({"role": "user", "content": "(The consultation begins.)"})
+        elif messages and messages[-1]["role"] == "assistant":
+            logger.info("Last message was assistant. Appending continuation prompt.")
+            messages.append({"role": "user", "content": "(The patient waits for you to continue.)"})
+        
+        # Ensure last message is not system if we have more than 1
+        if len(messages) > 1 and messages[-1]["role"] == "system":
+             pass
 
         self.tts_output_stopwatch = Stopwatch(autostart=False)
         tts = None
-
-        response_words = []
         error_from_tts = False
         time_to_first_token = None
-        num_words_sent = sum(
-            len(message.get("content", "").split()) for message in messages
-        )
-        mt.VLLM_SENT_WORDS.inc(num_words_sent)
-        mt.VLLM_REQUEST_LENGTH.observe(num_words_sent)
-        mt.VLLM_ACTIVE_SESSIONS.inc()
-
+        
+        # JSON Streaming State
+        full_json_buffer = ""
+        in_speech_field = False
+        speech_buffer = ""
+        
+        # Regex or simple state machine for extracting "speech": "..."
+        # We'll use a simple find mechanism on the buffer
+        # Limitation: This simple logic assumes "speech" comes after inner_thoughts usually, 
+        # or we scan for it. Mistral usually follows schema order.
+        
         try:
-            async for delta in rechunk_to_words(llm.chat_completion(messages)):
+            # Mistral Streaming with JSON Mode
+            async for delta in rechunk_to_words(self.mistral.chat_stream(messages, response_format={"type": "json_object"})):
+                full_json_buffer += delta
+                
+                # Simple extraction logic:
+                # 1. If we haven't found "speech": " yet, look for it.
+                # 2. If we found it, start yielding chars until we hit an unescaped "
+                
+                # Check for start of speech field
+                if not in_speech_field:
+                    if '"speech":' in full_json_buffer:
+                        # Find the start quote of the value
+                        speech_key_idx = full_json_buffer.rfind('"speech":')
+                        # Look for the opening quote after the key
+                        start_quote_idx = full_json_buffer.find('"', speech_key_idx + 9) # 9 is len('"speech":')
+                        
+                        if start_quote_idx != -1:
+                            # We found the start of the speech value!
+                            # The content starts after start_quote_idx
+                            # But wait, we might have already streamed past it in full_json_buffer if delta was huge
+                            # We need to only handle the *new* part or track position.
+                            pass # Tricky to do robustly with just simple string find on full buffer.
+                            
+                            # Let's try a simpler approach: 
+                            # Just look at the delta if we are "in_speech" flag is true.
+                            # But determining transition is hard.
+                            
+                            # BACKUP PLAN FOR STABILITY:
+                            # Just stream everything to TTS? NO, that includes JSON syntax.
+                            # Let's use a robust heuristic:
+                            # If the delta behaves like JSON structure, ignore it.
+                            # If it looks like speech text, send it.
+                            # NO, that's unreliable.
+                            
+                            # Standard Way: accumulating buffer and creating 'speech_accumulated'.
+                            # Track length of previously processed speech.
+                            pass
+
+                # Basic robust implementation:
+                # We won't perfect streaming JSON parsing here due to time.
+                # We will wait for a bigger chunk or just rely on post-processing for metadata,
+                # BUT for TTS we MUST stream speech.
+                
+                # Let's try to detect if we are strictly inside the "speech" value.
+                # Since we inserted the schema, Mistral will likely output keys in order.
+                # If 'speech' is generated, it will look like "speech": "Hello..."
+                
+                # Temporary Hack for MVP Latency:
+                # We will just Regex search the FULL buffer for "speech": "(.*)"
+                # And send the *difference* from the last match to TTS.
+                # This works if "speech" is at the end or continuously growing.
+                import re
+                match = re.search(r'"speech":\s*"(.*?)(?:"|$)', full_json_buffer, re.DOTALL)
+                if match:
+                    current_extracted_speech = match.group(1)
+                    # Handle escaped quotes if necessary (basic unescape)
+                    current_extracted_speech = current_extracted_speech.replace('\\"', '"')
+                    
+                    # Calculate new part
+                    if len(current_extracted_speech) > len(speech_buffer):
+                        new_text = current_extracted_speech[len(speech_buffer):]
+                        speech_buffer = current_extracted_speech
+                        
+                        # Send NEW text to TTS
+                        # Send text delta to Frontend (Transcript)
+                        # We use 'unmute.response.text.delta.ready' for fast updates
+                        await self.output_queue.put(
+                            ora.UnmuteResponseTextDeltaReady(delta=new_text)
+                        )
+                        
+                        if time_to_first_token is None:
+                            time_to_first_token = llm_stopwatch.time()
+                            self.debug_dict["timing"]["to_first_token"] = time_to_first_token
+                            mt.VLLM_TTFT.observe(time_to_first_token)
+                            logger.info("Sending first word to TTS: %s", new_text)
+
+                        self.tts_output_stopwatch.start_if_not_started()
+                        try:
+                            tts = await quest.get()
+                        except Exception:
+                            error_from_tts = True
+                            raise
+                        
+                        if len(self.state["history"]) > generating_message_i:
+                             break 
+                        
+                        await tts.send(new_text)
+
+            # Done
+            # Done
+            try:
+                # Parse JSON
+                structured_response = PatientResponse.model_validate_json(full_json_buffer)
+                
+                # Log Inner Thoughts
+                logger.info(f"INNER THOUGHTS: {structured_response.inner_thoughts}")
+                logger.info(f"EMOTIONAL STATE: {structured_response.emotional_state}")
+                
+                # Update State
+                self.state["emotional_state"] = structured_response.emotional_state
+                
+                # Attach to History (Memory)
+                # We assume TTS loop has created/updated the assistant turn by now (or will shortly).
+                # We update the *last* assistant turn.
+                # Note: This might be race-condition prone if TTS hasn't started yet, 
+                # but usually we have sent deltas to TTS by now.
+                # Safer: Check if history has assistant turn.
+                if self.state["history"] and self.state["history"][-1].role == "assistant":
+                    self.state["history"][-1].metadata = structured_response.model_dump()
+                else:
+                    # If history doesn't have it yet (e.g. extremely fast generation before TTS processes first chunk),
+                    # we might need to wait or just append it? 
+                    # Actually, if we streamed speech, TTS is active.
+                    pass
+
+                # Check Completion
+                if structured_response.conversation_status == "finished":
+                    logger.info("Agent signaled end of conversation.")
+                    # We send a closing message after speech is done?
+                    # Ideally we wait for TTS to finish.
+                    pass # We will let the flow continue, but blocking further turns?
+                    # Let's set a flag or just close stream?
+                    # Closing stream might cut off audio.
+                    # Best: Set conversation status to finished so next user input is ignored or triggers goodbye.
+                    self._conversation_status = "finished"
+
                 await self.output_queue.put(
-                    ora.UnmuteResponseTextDeltaReady(delta=delta)
+                    ora.ResponseTextDone(text=structured_response.speech)
                 )
 
-                mt.VLLM_RECV_WORDS.inc()
-                response_words.append(delta)
-
-                if time_to_first_token is None:
-                    time_to_first_token = llm_stopwatch.time()
-                    self.debug_dict["timing"]["to_first_token"] = time_to_first_token
-                    mt.VLLM_TTFT.observe(time_to_first_token)
-                    logger.info("Sending first word to TTS: %s", delta)
-
-                self.tts_output_stopwatch.start_if_not_started()
-                try:
-                    tts = await quest.get()
-                except Exception:
-                    error_from_tts = True
-                    raise
-
-                if len(self.chatbot.chat_history) > generating_message_i:
-                    break  # We've been interrupted
-
-                assert isinstance(delta, str)  # make Pyright happy
-                await tts.send(delta)
-
-            await self.output_queue.put(
-                # The words include the whitespace, so no need to add it here
-                ora.ResponseTextDone(text="".join(response_words))
-            )
+            except Exception as e:
+                logger.error(f"Failed to parse JSON response: {e}")
+                logger.error(f"Raw Response: {full_json_buffer}")
+                # Fallback
+                await self.output_queue.put(
+                    ora.ResponseTextDone(text=full_json_buffer)
+                )
+            
+            # Reset state after response done (if not finished)
+            if self._conversation_status != "finished":
+                self._conversation_status = "waiting_for_user"
 
             if tts is not None:
                 logger.info("Sending TTS EOS.")
                 await tts.send(TTSClientEosMessage())
+                
         except asyncio.CancelledError:
             mt.VLLM_INTERRUPTS.inc()
             raise
@@ -262,10 +514,9 @@ class UnmuteHandler:
                 mt.VLLM_HARD_ERRORS.inc()
             raise
         finally:
-            logger.info("End of VLLM, after %d words.", len(response_words))
+            logger.info("End of Mistral Generation.")
             mt.VLLM_ACTIVE_SESSIONS.dec()
-            mt.VLLM_REPLY_LENGTH.observe(len(response_words))
-            mt.VLLM_GEN_DURATION.observe(llm_stopwatch.time())
+            self._conversation_status = "waiting_for_user"
 
     def audio_received_sec(self) -> float:
         """How much audio has been received in seconds. Used instead of time.time().
@@ -298,7 +549,7 @@ class UnmuteHandler:
             }
         )
 
-        if self.chatbot.conversation_state() == "bot_speaking":
+        if self._get_conversation_state() == "bot_speaking":
             # Periodically update this not to trigger the "long silence" accidentally.
             self.waiting_for_user_start_time = self.audio_received_sec()
 
@@ -308,29 +559,21 @@ class UnmuteHandler:
             )
 
             # Debugging mode: always send a fixed string when it's the user's turn.
-            if self.chatbot.conversation_state() == "waiting_for_user":
+            if self._get_conversation_state() == "waiting_for_user":
                 logger.info("Using TTS debugging text. Ignoring microphone.")
-                self.chatbot.chat_history.append(
-                    {
-                        "role": "user",
-                        "content": TTS_DEBUGGING_TEXT,
-                    }
+                self.state["history"].append(
+                    DialogTurn(
+                        role="user",
+                        content=TTS_DEBUGGING_TEXT,
+                    )
                 )
                 await self._generate_response()
             return
 
-        if (
-            len(self.chatbot.chat_history) == 1
-            # Wait until the instructions are updated. A bit hacky
-            and self.chatbot.get_instructions() is not None
-        ):
-            logger.info("Generating initial response.")
-            await self._generate_response()
-
         if self.audio_input_override is not None:
             frame = (frame[0], self.audio_input_override.override(frame[1]))
 
-        if self.chatbot.conversation_state() == "user_speaking":
+        if self._get_conversation_state() == "user_speaking":
             self.debug_dict["timing"] = {}
 
         await stt.send_audio(array)
@@ -350,13 +593,15 @@ class UnmuteHandler:
                 for _ in range(num_frames):
                     await stt.send_audio(zero)
             elif (
-                self.chatbot.conversation_state() == "bot_speaking"
+                self._get_conversation_state() == "bot_speaking"
                 and stt.pause_prediction.value < 0.4
                 and self.audio_received_sec() > UNINTERRUPTIBLE_BY_VAD_TIME_SEC
             ):
-                logger.info("Interruption by STT-VAD")
-                await self.interrupt_bot()
-                await self.add_chat_message_delta("", "user")
+                logger.info("Ignored interruption (Strict Mode)")
+                # STRICT NO-INTERRUPTION:
+                # logger.info("Interruption by STT-VAD")
+                # await self.interrupt_bot()
+                # await self.add_chat_message_delta("", "user")
         else:
             # We do not try to detect interruption here, the STT would be processing
             # a chunk full of 0, so there is little chance the pause score would indicate an interruption.
@@ -373,7 +618,7 @@ class UnmuteHandler:
         stt = self.stt
         if stt is None:
             return False
-        if self.chatbot.conversation_state() != "user_speaking":
+        if self._get_conversation_state() != "user_speaking":
             return False
 
         # This is how much wall clock time has passed since we received the last ASR
@@ -419,6 +664,8 @@ class UnmuteHandler:
 
     async def start_up(self):
         await self.start_up_stt()
+        # Start Slow Loop
+        self.quest_manager.add(Quest("slow_loop", self._start_slow_loop, self._run_slow_loop, self._close_slow_loop))
         self.waiting_for_user_start_time = self.audio_received_sec()
 
     async def __aexit__(self, *exc: Any) -> None:
@@ -460,7 +707,7 @@ class UnmuteHandler:
                 if data.text == "":
                     continue
 
-                if self.chatbot.conversation_state() == "bot_speaking":
+                if self._get_conversation_state() == "bot_speaking":
                     logger.info("STT-based interruption")
                     await self.interrupt_bot()
 
@@ -527,6 +774,10 @@ class UnmuteHandler:
                         tts.received_samples_yielded / self.input_sample_rate
                     )
                     assert self.input_sample_rate == STT_SAMPLE_RATE
+                    # Log audio chunk reception for debug
+                    if tts.received_samples_yielded % 24000 < 500: # Log roughly once per second
+                        logger.info(f"TTS Audio Playback Progress: {time_since_start:.2f}s")
+
                     self.debug_dict["tts_throughput"] = {
                         "time_received": round(time_received, 2),
                         "time_received_yielded": round(time_received_yielded, 2),
@@ -536,8 +787,9 @@ class UnmuteHandler:
                         ),
                     }
 
-                if len(self.chatbot.chat_history) > generating_message_i:
-                    break
+                # Check for Interruption (if history changed)
+                if len(self.state["history"]) > generating_message_i:
+                    break 
 
                 if isinstance(message, QueueAudio):
                     t = self.tts_output_stopwatch.stop()
@@ -575,7 +827,10 @@ class UnmuteHandler:
             )
         )
 
-        message = self.chatbot.last_message("assistant")
+        # Replaced custom last_message with history check
+        message = ""
+        if self.state["history"] and self.state["history"][-1].role == "assistant":
+            message = self.state["history"][-1].content
         if message is None:
             logger.warning("No message to send in TTS shutdown.")
             message = ""
@@ -593,12 +848,13 @@ class UnmuteHandler:
         self.waiting_for_user_start_time = self.audio_received_sec()
 
     async def interrupt_bot(self):
-        if self.chatbot.conversation_state() != "bot_speaking":
+        if self._get_conversation_state() != "bot_speaking":
             raise RuntimeError(
                 "Can't interrupt bot when conversation state is "
-                f"{self.chatbot.conversation_state()}"
+                f"{self._get_conversation_state()}"
             )
 
+        INTERRUPTION_CHAR = " [Interrupted] " 
         await self.add_chat_message_delta(INTERRUPTION_CHAR, "assistant")
 
         self.output_queue = asyncio.Queue()  # Clear our own queue too
@@ -616,16 +872,78 @@ class UnmuteHandler:
 
         await self.quest_manager.remove("tts")
         await self.quest_manager.remove("llm")
+        # Ensure conversation state is reset
+        self._conversation_status = "waiting_for_user"
+
+    async def _start_slow_loop(self) -> Any:
+        # No special init needed
+        pass
+
+    async def _run_slow_loop(self, init_data: Any):
+        logger.info("Starting Slow Loop (Thinking Process)")
+        while True:
+            await asyncio.sleep(1.0) # Check every second
+            try:
+                # Use the graph's 'think' node
+                # We need to pass the current state in
+                # NOTE: In a real app, careful with state concurrency.
+                # Here we just read history and updates are atomic dict replacements usually safe enough for this prototype.
+                
+                # We invoke the 'think' node manually
+                updates = await self.graph.nodes["think"].afunc(self.state)
+                
+                if updates:
+                    # Update State
+                    for key, val in updates.items():
+                        self.state[key] = val
+                    logger.info(f"Slow Loop Update: {updates}")
+
+                    # Visualization
+                    await self.add_chat_message_delta(" [Slow Loop: Thinking...] ", "system")
+                    
+                    # Interruption Decision?
+                    # valid_interruption = updates.get("should_interrupt", False)
+                    # if valid_interruption and self._get_conversation_state() == "bot_speaking":
+                    #     logger.info("Slow Loop decided to interrupt!")
+                    #     await self.interrupt_bot()
+            
+            except Exception as e:
+                logger.error(f"Error in Slow Loop: {e}")
+
+    async def _close_slow_loop(self, init_data: Any):
+        pass
+
+    def _load_patient_profile(self):
+        try:
+            path = Path(__file__).parent.parent / "states" / "patient.json"
+            if path.exists():
+                with open(path, "r") as f:
+                    data = json.load(f)
+                    
+                # Naive loading: take the first scenario and base content
+                base = data.get("patient_llm_config", {}).get("base_prompt", {}).get("content", "")
+                
+                # For now just using the base instruction string
+                self.state["patient_profile"].base_instructions = base
+                
+                if "scenarios" in data["patient_llm_config"] and data["patient_llm_config"]["scenarios"]:
+                    # Just pick the first one's modifier to append? or Start neutral.
+                    # Let's verify we loaded something
+                    logger.info(f"Loaded patient profile from {path}")
+            else:
+                logger.warning(f"Patient profile not found at {path}")
+        except Exception as e:
+            logger.error(f"Failed to load patient profile: {e}")
 
     async def check_for_bot_goodbye(self):
         last_assistant_message = next(
             (
-                msg
-                for msg in reversed(self.chatbot.chat_history)
-                if msg["role"] == "assistant"
+                msg.content
+                for msg in reversed(self.state["history"])
+                if msg.role == "assistant"
             ),
-            {"content": ""},
-        )["content"]
+            "",
+        )
 
         # Using function calling would be a more robust solution, but it would make it
         # harder to swap LLMs.
@@ -637,7 +955,7 @@ class UnmuteHandler:
     async def detect_long_silence(self):
         """Handle situations where the user doesn't answer for a while."""
         if (
-            self.chatbot.conversation_state() == "waiting_for_user"
+            self._get_conversation_state() == "waiting_for_user"
             and (self.audio_received_sec() - self.waiting_for_user_start_time)
             > USER_SILENCE_TIMEOUT
         ):
@@ -650,7 +968,8 @@ class UnmuteHandler:
 
     async def update_session(self, session: ora.SessionConfig):
         if session.instructions:
-            self.chatbot.set_instructions(session.instructions)
+            self.state["patient_profile"].base_instructions = session.instructions
+            logger.info("Session instructions updated. Ready to start.")
 
         if session.voice:
             self.tts_voice = session.voice
@@ -660,3 +979,9 @@ class UnmuteHandler:
             await self.recorder.shutdown(keep_recording=False)
             self.recorder = None
             logger.info("Recording disabled for a session.")
+        
+        # Trigger start if this is the first update
+        if not self.state.get("has_started", False):
+            self.state["has_started"] = True
+            logger.info("First Session Update received. Starting Conversation.")
+            await self._generate_response()

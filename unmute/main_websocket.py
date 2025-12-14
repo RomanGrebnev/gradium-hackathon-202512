@@ -53,6 +53,8 @@ from unmute.utils import (
 from unmute.timer import Stopwatch
 from unmute.tts.voice_cloning import clone_voice
 from unmute.tts.voices import VoiceList
+from pathlib import Path
+import json
 from unmute.unmute_handler import UnmuteHandler
 
 app = FastAPI()
@@ -235,6 +237,20 @@ async def post_voices(file: UploadFile):
     return {"name": name}
 
 
+@app.get("/v1/scenarios")
+async def get_scenarios():
+    try:
+        path = Path(__file__).parent.parent / "states" / "patient.json"
+        if path.exists():
+            with open(path, "r") as f:
+                data = json.load(f)
+            scenarios = data.get("patient_llm_config", {}).get("scenarios", [])
+            return {"scenarios": scenarios}
+        return {"scenarios": []}
+    except Exception as e:
+        logger.error(f"Failed to load scenarios: {e}")
+        return {"scenarios": [], "error": str(e)}
+
 @app.websocket("/v1/realtime")
 async def websocket_route(websocket: WebSocket):
     global _last_profile, _current_profile
@@ -304,7 +320,7 @@ async def _report_websocket_exception(websocket: WebSocket, exc: Exception):
         else:
             logger.exception("Unexpected error: %r", exc)
             mt.HARD_ERRORS.inc()
-            error_message = "Internal server error :( Complain to Gradium"
+            error_message = f"Internal server error: {exc}"
 
     if error_message is not None:
         mt.FORCE_DISCONNECTS.inc()

@@ -1,0 +1,426 @@
+{
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:defensive_angry] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Neutral",
+    "turn_count": 20,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:38.638654"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:38.639807"
+        },
+        {
+            "role": "assistant",
+            "content": "Look,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:41.803372"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:41.954295"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:42.252902"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:42.253262"
+        },
+        {
+            "role": "assistant",
+            "content": "Well?",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:46.535631"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:46.604313"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:46.932583"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:46.932753"
+        },
+        {
+            "role": "assistant",
+            "content": "Well,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:50.644097"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:50.742832"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:51.093001"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:51.093309"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:52.815643"
+        },
+        {
+            "role": "user",
+            "content": "Iunderstandyourveryupsetaboutwhatweweretalkingabout.AndIdon't want youtogetangry.IthinkwecanbothbeveryprofessionalaboutthissituationandIthinkwecandiscussitastwoadults.SoIknowwhatI'm doingandIhaveexaminedyourprofilereallythoroughly.Sonowlet'sdiscussthisimportantpartofthecondition.",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:45:52.833097"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:23.771823"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:23.772126"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:28.337355"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:28.337545"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:28.652834"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:28.653411"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:33.585123"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:33.755643"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:34.052226"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:34.052543"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:38.372591"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:38.372747"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:38.652899"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:38.653375"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:40.772424"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.052890"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.053382"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.113585"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.492913"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.493327"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.543007"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.852125"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.852616"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:41.906287"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.132881"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.133296"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.188083"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.493470"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.493846"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.546438"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.772636"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.773083"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:42.824003"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.092748"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.093241"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.145025"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.531694"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.531869"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.577739"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.852784"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.853206"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:43.904723"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.132922"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.133347"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.184297"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.492989"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.493460"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.543509"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.812264"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.812782"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:44.865204"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:46:45.215377"
+        }
+    ]
+}

@@ -1,0 +1,502 @@
+{
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:misinformed_self_blame] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Anxious, confused, and overwhelmed with a strong sense of self-blame",
+    "turn_count": 20,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:07.211112"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:07.211804"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:10.746412"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:10.746679"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:11.052436"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:11.052726"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:14.851611"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:14.946076"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:15.253391"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:15.253613"
+        },
+        {
+            "role": "assistant",
+            "content": "I...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:18.931457"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:19.026638"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:19.333341"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:19.333591"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:23.187489"
+        },
+        {
+            "role": "user",
+            "content": "No,you're doingnothingwrong.",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:23.222208"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:24.493800"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:24.494213"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:25.668357"
+        },
+        {
+            "role": "user",
+            "content": "AndIjustwantedtotellyou, we havetotalkaboutsomething.CanwemaybejustclosethisdoorandyouwilllistentowhatIhavetosaytoyou?",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:25.684311"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:35.213431"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:35.213775"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:39.214113"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:39.308009"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:39.613098"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:39.613644"
+        },
+        {
+            "role": "user",
+            "content": "Yes,Ihavetobreakdownsomebadnewstoyou.Sowiththe\u2013technicallywithyourconditions,withthosesymptoms you wereadmittedtothehospital,Ithinkyou\u2013 and according tothetests,whilelikelyyouhaveatype2diabetes,",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:38:41.991740"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:04.773912"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:04.774183"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:09.543270"
+        },
+        {
+            "role": "user",
+            "content": " ... ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:09.620121"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:17.933658"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:17.934027"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:19.134536"
+        },
+        {
+            "role": "user",
+            "content": "no,youdidn't doanythingwrong.Youwerenoteatingsomuchsugar.Your\u2013",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:19.167031"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:26.294164"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:26.294496"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:26.581556"
+        },
+        {
+            "role": "user",
+            "content": "evenprotocolisjustright.Thethingisthatit's a chronicconditionandyoucannot doanythingaboutit.Anditjustrequirestreatmentandlots ofattention.",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:26.599380"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:37.094103"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:37.094426"
+        },
+        {
+            "role": "assistant",
+            "content": "But",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:41.110780"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:41.111144"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:41.414296"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:41.414664"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:45.387439"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:45.481346"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:45.813943"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:45.814729"
+        },
+        {
+            "role": "user",
+            "content": "No,no,youdidnothaveanyproblemswithfollowingyourdiet.Andalso,Iknowthatyou're beingphysicallyactive.Thisisjusthowourbody isdesigned. AndsometimeswehavechronicconditionsthatarejustdefinedbyourDNA.Andit's \u2013thereisnothingthatyoudidwrongmydearfriend.AndIjustwantto makesurethatyoufeelcomfortablelivingwiththisdiagnosis. BecauseIbelievethatyoucanstillhaveaveryproductiveandverymeaningfullife,evenifyouhaveadiagnosis likethat.",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:39:49.616180"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:29.133111"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:29.133489"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:33.745654"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:33.795479"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:34.133814"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:34.134124"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:38.313103"
+        },
+        {
+            "role": "user",
+            "content": "No,ofcoursenot.It's notbecauseofyou atall.Youwerebornwithit.Andthisistheplacewhereyoucanadmitit.Sothetwodaysjustde-manifestationofthisbiggerissuethatall\u2013 you alwayshad.Andyoucouldn't haveavoideditatall.",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:38.329628"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:57.733716"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:40:57.733973"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:01.948953"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:02.023699"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:02.293714"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:02.294112"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:07.333714"
+        },
+        {
+            "role": "user",
+            "content": "No,no,absolutelynot. Ibelievethatyoudideverythingjustright. Youwerefollowing themedicalprotocols.Andthethingyoudidreallywellwas",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:07.410874"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:18.933254"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:18.933492"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": {
+                "inner_thoughts": "Oh dear, the doctor keeps saying it's not my fault, but I can't help feeling like I must have done something wrong. Maybe I didn't walk enough or I ate too much bread? I know they say it's in my DNA, but it's hard not to blame myself. I just feel so confused and scared. What if I can't manage this?",
+                "emotional_state": "Anxious, confused, and overwhelmed with a strong sense of self-blame",
+                "speech": "But... but I don\u2019t understand. I thought if I just did everything right, this wouldn\u2019t happen. Are you sure it\u2019s not because of me?",
+                "compliance_check": false,
+                "conversation_status": "continue",
+                "metadata": {
+                    "doctor_empathy_perceived": 7,
+                    "self_blame_level": 8
+                }
+            },
+            "timestamp": "2025-12-14T16:41:23.025348"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:23.143190"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:23.453517"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:23.453737"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:27.553591"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:27.644866"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:27.934347"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:27.934642"
+        },
+        {
+            "role": "assistant",
+            "content": "But...",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:32.457039"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:32.529086"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T16:41:32.814126"
+        }
+    ]
+}

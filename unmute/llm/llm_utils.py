@@ -11,6 +11,7 @@ from ..gradium_constants import LLM_API_KEY, LLM_MODEL, LLM_BASE_URL
 
 INTERRUPTION_CHAR = "—"  # em-dash
 USER_SILENCE_MARKER = "..."
+print(f"DEBUG: LLM_BASE_URL is set to: '{LLM_BASE_URL}'")
 
 
 def preprocess_messages_for_llm(
