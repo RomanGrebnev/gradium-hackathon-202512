@@ -24,6 +24,7 @@ import clsx from "clsx";
 import { useBackendServerUrl } from "./useBackendServerUrl";
 import { RECORDING_CONSENT_STORAGE_KEY } from "./ConsentModal";
 import Transcript from "./Transcript";
+import ReportPage from "./ReportPage";
 
 const Unmute = () => {
   const { isDevMode, showSubtitles } = useKeyboardShortcuts();
@@ -41,7 +42,7 @@ const Unmute = () => {
   const [webSocketUrl, setWebSocketUrl] = useState<string | null>(null);
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
-  const [page, setPage] = useState<'config' | 'simulation'>('config');
+  const [page, setPage] = useState<'config' | 'simulation' | 'report'>('config');
 
   useWakeLock(shouldConnect);
   const { analyticsOnDownloadRecording } = useGoogleAnalytics({
@@ -281,6 +282,12 @@ const Unmute = () => {
     setPage('config');
   };
 
+  const onFinishSimulation = () => {
+    setShouldConnect(false);
+    shutdownAudio();
+    setPage('report');
+  };
+
   if (page === 'config') {
     return (
       <div className="w-full">
@@ -292,6 +299,15 @@ const Unmute = () => {
           onStart={onStartSimulation}
         />
       </div>
+    );
+  }
+
+  if (page === 'report') {
+    return (
+      <ReportPage
+        chatHistory={rawChatHistory}
+        onBack={() => setPage('config')}
+      />
     );
   }
 
@@ -365,12 +381,13 @@ const Unmute = () => {
         {/* Controls Footer */}
         <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center px-6 py-6 gap-4 z-10 bg-background border-t border-white/10">
           <SlantedButton
-            onClick={onDownloadRecordingButtonPress}
-            kind={recordingAvailable ? "secondary" : "disabled"}
-            extraClasses="w-full max-w-96"
+            onClick={onFinishSimulation}
+            kind="primary"
+            extraClasses="w-full max-w-96 bg-gradium-orange border-gradium-orange hover:bg-orange-600"
           >
-            {"download recording"}
+            Finish & Generate Report
           </SlantedButton>
+
           <SlantedButton
             onClick={onConnectButtonPress}
             kind={shouldConnect ? "secondary" : "primary"}

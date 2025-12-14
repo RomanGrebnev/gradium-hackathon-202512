@@ -1,0 +1,86 @@
+{
+    "transcript": "Patient: \nPatient: Hi!\nDoctor: \nPatient: \nPatient:  [Interrupted] \nDoctor: Hi,howisitgoing?\nPatient: ",
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:silent_shutdown] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Neutral",
+    "turn_count": 3,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:55.313142"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:55.314369"
+        },
+        {
+            "role": "assistant",
+            "content": "Hi!",
+            "metadata": {
+                "inner_thoughts": "First interaction. Need to greet the doctor.",
+                "emotional_state": "Neutral",
+                "speech": "Hi!",
+                "compliance_check": true,
+                "conversation_status": "continue",
+                "metadata": {}
+            },
+            "timestamp": "2025-12-14T17:04:55.504756"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:55.692781"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:56.042502"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:56.043269"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:57.734875"
+        },
+        {
+            "role": "user",
+            "content": "Hi,howisitgoing?",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:57.751810"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:58.882467"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:04:58.882753"
+        }
+    ]
+}

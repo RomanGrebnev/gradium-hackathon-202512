@@ -1,0 +1,62 @@
+{
+    "transcript": "Patient: \nPatient: Hi!\nDoctor: \nPatient: ",
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:panic_catastrophic] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Neutral",
+    "turn_count": 2,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:03:24.884626"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:03:24.887667"
+        },
+        {
+            "role": "assistant",
+            "content": "Hi!",
+            "metadata": {
+                "inner_thoughts": "First interaction. Need to greet the doctor.",
+                "emotional_state": "Neutral",
+                "speech": "Hi!",
+                "compliance_check": true,
+                "conversation_status": "continue",
+                "metadata": {}
+            },
+            "timestamp": "2025-12-14T17:03:24.991714"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:03:25.170200"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:03:25.469664"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:03:25.469832"
+        }
+    ]
+}

@@ -1,0 +1,122 @@
+{
+    "transcript": "Patient: \nPatient: Hi!\nDoctor: \nPatient: \nPatient:  [Interrupted] \nDoctor: Hi,how's it going?\nPatient: \nPatient: Not\nDoctor: \nPatient: \nDoctor: Yeah,Iknowthatyou're worriedaboutyoursugarlevels.That's something Iwanted totalkabout.\nPatient: ",
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:identity_future_threat] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Neutral",
+    "turn_count": 4,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:02.183542"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:02.184341"
+        },
+        {
+            "role": "assistant",
+            "content": "Hi!",
+            "metadata": {
+                "inner_thoughts": "First interaction. Need to greet the doctor.",
+                "emotional_state": "Neutral",
+                "speech": "Hi!",
+                "compliance_check": true,
+                "conversation_status": "continue",
+                "metadata": {}
+            },
+            "timestamp": "2025-12-14T17:06:02.351058"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:02.533325"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:02.856874"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:02.857313"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:04.424089"
+        },
+        {
+            "role": "user",
+            "content": "Hi,how's it going?",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:04.434125"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:05.656958"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:05.657313"
+        },
+        {
+            "role": "assistant",
+            "content": "Not",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:08.387207"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:08.387482"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:08.696235"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:08.696529"
+        },
+        {
+            "role": "user",
+            "content": "Yeah,Iknowthatyou're worriedaboutyoursugarlevels.That's something Iwanted totalkabout.",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:11.029812"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:06:16.815778"
+        }
+    ]
+}

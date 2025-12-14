@@ -5,6 +5,7 @@ from logging import getLogger
 from pathlib import Path
 import time
 from typing import Any, Literal, cast
+import base64
 
 import numpy as np
 import websockets
@@ -35,7 +36,7 @@ from unmute.agent.mistral import MistralClient
 from unmute.schemas import PatientProfile, DialogTurn, SimulationState
 from unmute.schemas_phase3 import PatientResponse
 from unmute.quest_manager import Quest, QuestManager
-from unmute.recorder import Recorder
+# Removed duplicate Recorder import
 from unmute.stt.speech_to_text import SpeechToText, STTMarkerMessage
 from unmute.timer import Stopwatch
 from unmute.tts.text_to_speech import (
@@ -44,6 +45,8 @@ from unmute.tts.text_to_speech import (
     QueueAudio,
     QueueText,
 )
+from unmute.recorder import Recorder
+from unmute.audio_recorder import AudioRecorder
 
 # TTS_DEBUGGING_TEXT: str | None = "What's 'Hello world'?"
 # TTS_DEBUGGING_TEXT: str | None = "What's the difference between a bagel and a donut?"
@@ -83,7 +86,10 @@ class UnmuteHandler:
         self.output_sample_rate = TTS_SAMPLE_RATE
         self.n_samples_received = 0  # Used for measuring time
         self.output_queue: asyncio.Queue[HandlerOutput] = asyncio.Queue()
+        # Event Recorder for JSONL
         self.recorder = Recorder(RECORDINGS_DIR) if RECORDINGS_DIR else None
+        # Audio Recorder for WAV (User + Agent)
+        self.audio_recorder = AudioRecorder(RECORDINGS_DIR, sample_rate=TTS_SAMPLE_RATE) if RECORDINGS_DIR else None
 
         self.quest_manager = QuestManager()
 
@@ -160,7 +166,21 @@ class UnmuteHandler:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         filename = report_dir / f"simulation_{timestamp}.json"
         
+        # Generate Transcript
+        transcript_lines = []
+        for t in self.state["history"]:
+            if t.role == "user":
+                role_label = "Doctor"
+            elif t.role == "assistant":
+                role_label = "Patient"
+            else:
+                continue
+            transcript_lines.append(f"{role_label}: {t.content}")
+        
+        transcript_str = "\n".join(transcript_lines)
+
         report_data = {
+            "transcript": transcript_str,
             "patient_profile": self.state["patient_profile"].model_dump(),
             "emotional_state_final": self.state["emotional_state"],
             "turn_count": self.state.get("turn_count", 0),
@@ -273,7 +293,7 @@ class UnmuteHandler:
 
     async def _generate_response_task(self):
         # 0. Check Turn Limit
-        MAX_TURNS = 20
+        MAX_TURNS = 10
         self.state.setdefault("turn_count", 0)
         
         if self.state["turn_count"] >= MAX_TURNS:
@@ -284,7 +304,68 @@ class UnmuteHandler:
         self.state["turn_count"] += 1
         self._conversation_status = "bot_speaking"
         await self.add_chat_message_delta(" [Fast Loop: Speaking...] ", "system")
-        # We assume the user input is finished and in the state history.
+
+        # 1. First Message Override
+        if self.state["turn_count"] == 1:
+            logger.info("First turn: Forcing 'Hi!' response.")
+            # Create a fake structured response
+            structured_response = PatientResponse(
+                inner_thoughts="First interaction. Need to greet the doctor.",
+                emotional_state="Neutral",
+                speech="Hi!",
+                compliance_check=True,
+                conversation_status="continue"
+            )
+            # Simulate processing time slightly? No, fast is good.
+            # Directly jump to Done logic logic via a mock full_json_buffer or just emulate the end of the loop?
+            # Creating a helper or just outputting it directly is cleaner.
+            
+            # Send to TTS
+            await self.output_queue.put(
+                ora.UnmuteResponseTextDeltaReady(delta="Hi!")
+            )
+            
+            # We need to start TTS connection context though
+            # But tts sending needs quest. 
+            # Let's just follow the standard path but MOCK the mistral generation?
+            # Or simpler: inject "Hi!" into the standard logic flow handling?
+            # It's inside a big function. Let's do it manually here.
+            
+            quest = await self.start_up_tts(len(self.state["history"]))
+            try:
+                tts = await quest.get()
+                await tts.send("Hi!")
+                await tts.send(TTSClientEosMessage())
+            except Exception as e:
+                logger.error(f"TTS Error on first message: {e}")
+
+            # Update State
+            self.state["emotional_state"] = structured_response.emotional_state
+            # Append Assistant Turn
+            if self.state["history"] and self.state["history"][-1].role == "assistant":
+                 pass 
+            else:
+                 # Should create if strictly following turn-taking, 
+                 # but our loop relies on TTS logic to append... 
+                 # Wait, _tts_loop does NOT append to history?
+                 # No, `add_chat_message_delta` is called by `_tts_loop` implicitly via `_stt_loop`? 
+                 # NO. 
+                 # Let's check `_tts_loop`. It reads from tts stream. 
+                 # `tts` object ? No `TextToSpeech` does NOT call add_chat_message_delta.
+                 # `UnmuteHandler.add_chat_message_delta` is called by `_generate_response` at start with empty string.
+                 # Then logic usually appends.
+                 # To be safe, let's append "Hi!" to the assistant turn.
+                 await self.add_chat_message_delta("Hi!", "assistant")
+                 
+            # Attach Metadata
+            if self.state["history"] and self.state["history"][-1].role == "assistant":
+                    self.state["history"][-1].metadata = structured_response.model_dump()
+
+            await self.output_queue.put(
+                ora.ResponseTextDone(text="Hi!")
+            )
+            self._conversation_status = "waiting_for_user"
+            return
         
         # 1. Run Analysis (Listen -> Analyze)
         # We skip 'listen' because we manually updated history in add_chat_message_delta
@@ -317,7 +398,7 @@ class UnmuteHandler:
         system_prompt = (
             f"You are {profile.name}, {profile.age} years old.\\n"
             f"Condition: {profile.condition}.\\n"
-            f"Instructions: {profile.base_instructions}\\n\\n"
+            f"Instructions: {profile.base_instructions} Keep your responses VERY SHORT (max 10 words if possible, never more than 2 sentences).\\n\\n"
             f"IMPORTANT: You MUST output a JSON object adhering to the following schema:\\n"
             f"{json.dumps(schema_json)}\\n\\n"
             f"The 'speech' field is what you say out loud. 'inner_thoughts' are your private reasoning."
@@ -576,6 +657,10 @@ class UnmuteHandler:
         if self._get_conversation_state() == "user_speaking":
             self.debug_dict["timing"] = {}
 
+        # Record User Audio
+        if self.audio_recorder:
+            self.audio_recorder.add_audio(array)
+
         await stt.send_audio(array)
         if self.stt_end_of_flush_time is None:
             await self.detect_long_silence()
@@ -797,9 +882,20 @@ class UnmuteHandler:
                         self.debug_dict["timing"]["tts_audio"] = t
 
                     audio = message.pcm
-                    assert self.output_sample_rate == TTS_SAMPLE_RATE
+                    assert self.output_sample_rate == TTS_SAMPLE_RATE # 24kHz
 
-                    await output_queue.put((TTS_SAMPLE_RATE, audio))
+                    # Record Agent Audio (AudioRecorder handles float32 clipping/conversion internally)
+                    if self.audio_recorder:
+                        self.audio_recorder.add_audio(audio)
+                    
+                    # Convert Float32 -> Int16 -> Bytes -> Base64 for Frontend
+                    audio_int16 = (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)
+                    audio_b64 = base64.b64encode(audio_int16.tobytes()).decode("utf-8")
+
+                    await self.output_queue.put(
+                        ora.ResponseAudioDelta(delta=audio_b64)
+                    )
+                    mt.TTS_SENT_BYTES.inc(len(audio_b64))
 
                     if audio_started is None:
                         audio_started = self.audio_received_sec()

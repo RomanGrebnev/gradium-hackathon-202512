@@ -1,13 +1,16 @@
+import re
 import asyncio
 import base64
 import json
 import logging
+import os # Added os import
 from functools import cache, partial
 from typing import Annotated
 
 import numpy as np
 import requests
 import sphn
+from mistralai import Mistral # Added for report endpoint
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -17,7 +20,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse # Added HTMLResponse
 from fastapi.websockets import WebSocketState
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError, computed_field
@@ -246,10 +249,250 @@ async def get_scenarios():
                 data = json.load(f)
             scenarios = data.get("patient_llm_config", {}).get("scenarios", [])
             return {"scenarios": scenarios}
-        return {"scenarios": []}
     except Exception as e:
         logger.error(f"Failed to load scenarios: {e}")
         return {"scenarios": [], "error": str(e)}
+
+class TranscriptRequest(BaseModel):
+    transcript: str
+
+SYSTEM_PROMPT = """
+You are an expert evaluator of doctor-patient conversations, specifically focused on delivering sensitive diagnoses (like Type 1 Diabetes) to teenagers.
+
+
+Your task is to evaluate the transcript of a conversation between a doctor and a teenage patient. Follow these rules:
+
+
+1. **Language Matters**: Communicate respectfully, inclusively, empathetically, and clearly. Avoid blaming, stigmatizing, or using medical jargon the teenager cannot understand.
+2. Evaluate the doctor’s performance across the following criteria, providing scores (0-5), justification, missed opportunities, and actionable feedback:
+
+
+---
+
+
+**Evaluation Criteria and Questions**:
+
+
+1. **Diagnosis Delivery**
+  - Did the doctor clearly explain the diagnosis?
+  - Was it age-appropriate and understandable?
+  - Was the information structured and not overwhelming?
+
+
+2. **Emotional Acknowledgement**
+  - Did the doctor recognize the patient's feelings?
+  - Did they show empathy or concern?
+  - Did they ask about the patient’s emotional state?
+
+
+3. **Language Accessibility**
+  - Was the language simple, clear, and understandable for a teenager?
+  - Was technical jargon avoided or explained?
+  - Were metaphors or analogies helpful?
+
+
+4. **Emotional Responsiveness**
+  - Did the doctor respond appropriately to the patient’s emotional cues?
+  - Did they offer reassurance or support?
+
+
+5. **Interaction Balance**
+  - Was the conversation balanced in speaking turns?
+  - Did the doctor encourage the patient to speak and ask questions?
+
+
+6. **Identity & Future Preservation**
+  - Did the doctor acknowledge the patient’s identity, individuality, or future goals?
+  - Did they avoid framing the patient solely as a “patient” or “ill person”?
+
+
+---
+
+
+**Output Instructions:**
+- Always output **valid JSON** following this structure.
+- Include both the evaluation scores and detailed recommendations.
+- Do not include Markdown or explanatory text outside the JSON.
+- Be concise but specific.
+
+
+---
+
+
+Return this JSON structure (fill in all fields):
+
+
+{{
+ "transcript": "{transcript}",
+ "evaluation": {{
+     "diagnosis_delivery": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}},
+     "emotional_acknowledgement": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}},
+     "language_accessibility": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}},
+     "emotional_responsiveness": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}},
+     "interaction_balance": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}},
+     "identity_future_preservation": {{"score": 0, "justification": "", "missed_opportunity": "", "feedback": ""}}
+ }},
+ "recommendations": {{
+     "positive_aspects": "",
+     "areas_to_improve": "",
+     "patient_emotional_response": ""
+ }}
+}}
+
+
+Now evaluate the following transcript:
+{transcript}
+"""
+
+@app.post("/v1/report")
+async def generate_report(request: TranscriptRequest):
+    transcript = request.transcript.strip()
+    if not transcript:
+        raise HTTPException(status_code=400, detail="Transcript cannot be empty.")
+
+    # Build prompt with embedded transcript
+    prompt = SYSTEM_PROMPT.format(transcript=transcript)
+
+    try:
+        # Use MISTRAL_API_KEY directly as LLM_API_KEY might be for proxy
+        api_key = os.environ.get("MISTRAL_API_KEY")
+        if not api_key:
+             raise HTTPException(status_code=500, detail="MISTRAL_API_KEY not set")
+             
+        client = Mistral(api_key=api_key)
+
+        # Chat completion request - using async to avoid blocking
+        response = await client.chat.complete_async(
+            model="mistral-small-latest",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": transcript},
+            ],
+            stream=False
+        )
+
+        # Extract content
+        raw_output = response.choices[0].message.content
+
+        # Strip Markdown backticks if present
+        clean_output = re.sub(r"^```json\s*|\s*```$", "", raw_output.strip(), flags=re.MULTILINE)
+
+        try:
+            result = json.loads(clean_output)
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to parse LLM output as JSON: {e}\nRaw output:\n{raw_output}"
+            )
+
+        return result
+
+    except Exception as e:
+        logger.exception("Report generation failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/v1/report/html", response_class=HTMLResponse)
+async def generate_report_html(request: TranscriptRequest):
+    # Reuse the JSON generation logic
+    try:
+        report_data = await generate_report(request)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.exception("HTML Report generation failed during JSON step")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # HTML Template
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Unmute Evaluation Report</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Inter', sans-serif; background-color: #111; color: #f0f0f0; }}
+            .score-high {{ color: #4ade80; background: rgba(74, 222, 128, 0.1); }}
+            .score-med {{ color: #facc15; background: rgba(250, 204, 21, 0.1); }}
+            .score-low {{ color: #f87171; background: rgba(248, 113, 113, 0.1); }}
+        </style>
+    </head>
+    <body class="p-8 max-w-4xl mx-auto">
+        <header class="mb-12 border-b border-gray-800 pb-8">
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500 mb-2">
+                Evaluation Report
+            </h1>
+            <p class="text-gray-400">Generated by Unmute AI</p>
+        </header>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <span>📝</span> Key Recommendations
+            </h2>
+            <div class="grid gap-6">
+                <div class="p-6 rounded-xl border border-green-900/50 bg-green-900/10">
+                    <h3 class="font-bold text-green-400 mb-2">Positive Aspects</h3>
+                    <p class="text-gray-300 leading-relaxed">{report_data['recommendations']['positive_aspects']}</p>
+                </div>
+                <div class="p-6 rounded-xl border border-red-900/50 bg-red-900/10">
+                    <h3 class="font-bold text-red-400 mb-2">Areas to Improve</h3>
+                    <p class="text-gray-300 leading-relaxed">{report_data['recommendations']['areas_to_improve']}</p>
+                </div>
+                <div class="p-6 rounded-xl border border-blue-900/50 bg-blue-900/10">
+                    <h3 class="font-bold text-blue-400 mb-2">Patient's Emotional Response</h3>
+                    <p class="text-gray-300 leading-relaxed">{report_data['recommendations']['patient_emotional_response']}</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6">Detailed Analysis</h2>
+            <div class="space-y-6">
+                {_render_category_html("Diagnosis Delivery", report_data['evaluation']['diagnosis_delivery'])}
+                {_render_category_html("Emotional Acknowledgement", report_data['evaluation']['emotional_acknowledgement'])}
+                {_render_category_html("Language Accessibility", report_data['evaluation']['language_accessibility'])}
+                {_render_category_html("Emotional Responsiveness", report_data['evaluation']['emotional_responsiveness'])}
+                {_render_category_html("Interaction Balance", report_data['evaluation']['interaction_balance'])}
+                {_render_category_html("Identity & Future Preservation", report_data['evaluation']['identity_future_preservation'])}
+            </div>
+        </section>
+
+        <section class="mt-16 pt-8 border-t border-gray-800 opacity-60">
+            <h3 class="text-lg font-bold mb-4">Transcript Reference</h3>
+            <pre class="whitespace-pre-wrap bg-black p-6 rounded-lg text-sm font-mono text-gray-400 border border-gray-800 overflow-x-auto">{report_data['transcript']}</pre>
+        </section>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+def _render_category_html(title, data):
+    score = data['score']
+    score_class = "score-high" if score >= 4 else "score-med" if score >= 3 else "score-low"
+    
+    return f"""
+    <div class="bg-white/5 p-6 rounded-xl border border-white/10">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">{title}</h3>
+            <span class="px-4 py-1 rounded-full font-bold {score_class}">
+                Score: {score}/5
+            </span>
+        </div>
+        <p class="text-gray-300 mb-4">{data['justification']}</p>
+        <div class="grid md:grid-cols-2 gap-6 text-sm">
+            <div>
+                <span class="text-red-400 font-semibold block mb-1">Missed Opportunity:</span>
+                <span class="text-gray-400">{data['missed_opportunity']}</span>
+            </div>
+            <div>
+                <span class="text-blue-400 font-semibold block mb-1">Feedback:</span>
+                <span class="text-gray-400">{data['feedback']}</span>
+            </div>
+        </div>
+    </div>
+    """
 
 @app.websocket("/v1/realtime")
 async def websocket_route(websocket: WebSocket):

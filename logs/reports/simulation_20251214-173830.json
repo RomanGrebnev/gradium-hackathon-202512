@@ -1,0 +1,194 @@
+{
+    "transcript": "Patient: \nPatient: Hi!\nDoctor: \nPatient: \nPatient:  [Interrupted] \nDoctor: connecttothecult.\nPatient: \nPatient:  [Interrupted] \nDoctor: Hey,how's itgoing?Iwanttobreakdownsomebadnewstoyou.I'm sorry, myfriend, but Ihavetotellyouthatyouhaveatypetwodiabetes.AndIknowthat itmightsoundterrifying,butpleasebelieveme,this isawell-researched diagnosisinthemedicalfield.SoIwantyouto bebraveandtojustkeeplivingwithlikebeingagreathumanas youare.Sothisissomething wecanhandle.\nPatient: \nPatient: Oh\nDoctor: \nPatient: \nPatient:  [Interrupted] \nDoctor: Yeah,Iknow, myfriend.Andplease,asIsaid,youhaveto bebrave.Thisisverychallenging.ButIneedyoutobelieveme.\nPatient: \nPatient: I...\nDoctor: \nPatient: \nPatient:  [Interrupted] \nDoctor: OK,atthispoint,we canfinishtheconversationandwecangenerateareport.",
+    "patient_profile": {
+        "name": "Martha",
+        "age": 65,
+        "gender": "Female",
+        "condition": "Type 2 Diabetes",
+        "scenario_id": "default",
+        "base_instructions": {
+            "type": "constant",
+            "text": "[SCENARIO:crying_overwhelmed] ",
+            "language": null
+        }
+    },
+    "emotional_state_final": "Neutral",
+    "turn_count": 7,
+    "history": [
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:34.908685"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:34.908948"
+        },
+        {
+            "role": "assistant",
+            "content": "Hi!",
+            "metadata": {
+                "inner_thoughts": "First interaction. Need to greet the doctor.",
+                "emotional_state": "Neutral",
+                "speech": "Hi!",
+                "compliance_check": true,
+                "conversation_status": "continue",
+                "metadata": {}
+            },
+            "timestamp": "2025-12-14T17:37:35.009115"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:35.186894"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:35.484101"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:35.484460"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:35.590460"
+        },
+        {
+            "role": "user",
+            "content": "connecttothecult.",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:35.590519"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:36.602360"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:36.602532"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:38.367338"
+        },
+        {
+            "role": "user",
+            "content": "Hey,how's itgoing?Iwanttobreakdownsomebadnewstoyou.I'm sorry, myfriend, but Ihavetotellyouthatyouhaveatypetwodiabetes.AndIknowthat itmightsoundterrifying,butpleasebelieveme,this isawell-researched diagnosisinthemedicalfield.SoIwantyouto bebraveandtojustkeeplivingwithlikebeingagreathumanas youare.Sothisissomething wecanhandle.",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:37:38.383681"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:04.643366"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:04.643705"
+        },
+        {
+            "role": "assistant",
+            "content": "Oh",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:07.260067"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:07.260291"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:07.562940"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:07.563242"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:09.681638"
+        },
+        {
+            "role": "user",
+            "content": "Yeah,Iknow, myfriend.Andplease,asIsaid,youhaveto bebrave.Thisisverychallenging.ButIneedyoutobelieveme.",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:09.698195"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:19.273126"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:19.273460"
+        },
+        {
+            "role": "assistant",
+            "content": "I...",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:22.305164"
+        },
+        {
+            "role": "user",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:22.378009"
+        },
+        {
+            "role": "assistant",
+            "content": "",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:22.723190"
+        },
+        {
+            "role": "system",
+            "content": " [Fast Loop: Speaking...] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:22.723416"
+        },
+        {
+            "role": "assistant",
+            "content": " [Interrupted] ",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:23.981499"
+        },
+        {
+            "role": "user",
+            "content": "OK,atthispoint,we canfinishtheconversationandwecangenerateareport.",
+            "metadata": null,
+            "timestamp": "2025-12-14T17:38:24.010886"
+        }
+    ]
+}
